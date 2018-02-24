@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>es6test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+</head>
+<body>
+    <section id="controlPanel">
+        <label class="bpm">BPM</label>
+        <div class="bpm input-container">
+            <input class="bpm" type="number" min="80" max="240" value="100">
+        </div>
+        <label id="wave">WaveForm</label>
+        <select name="oscillatorWave">
+            <option value="square">square</option>
+            <option value="sine">sine</option>
+            <option value="sawtooth">sawtooth</option>
+            <option value="triangle">triangle</option>
+            <option value="custom">custom</option>
+        </select>
+        <button id="start">start</button>
+        <button id="stop">stop</button>
+        <button id="reset">reset</button>
+        <div class="progress input-container">
+            <input class="progress" type="range"></input>
+        </div>
+    </section>
+    <script src="index.js"></script>
+</body>
+</html>

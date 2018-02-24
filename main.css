@@ -1,0 +1,39 @@
+body {
+    background: rgb(34, 47, 53);
+    color: rgb(199, 199, 199);
+    display: flex;
+    justify-content: center;
+}
+
+#controlPanel {
+    width: 20em;
+    display: grid;
+    grid-gap: 0.5em;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-areas:
+        "bpm-label bpm-input bpm-input"
+        "wave-label wave-input wave-input"
+        "start-btn stop-btn reset-btn"
+        "progress-bar progress-bar progress-bar";
+}
+
+label.bpm {grid-area: bpm-label;}
+.input-container.bpm {grid-area: bpm-input;}
+
+label#wave {grid-area: wave-label;}
+select {grid-area: wave-input;}
+
+button#start {grid-area: start-btn;}
+button#stop {grid-area: stop-btn;}
+button#reset {grid-area: reset-btn;}
+
+.input-container.progress {grid-area: progress-bar;}
+
+.input-container {
+    padding-right: 14px;
+}
+input {
+    width: 100%;
+}
+
