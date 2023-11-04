@@ -1,9 +1,19 @@
-const input = document.querySelector('input.bpm');
-const progress = document.querySelector('input.progress');
-const select = document.querySelector('select');
-const startButton = document.querySelector('button#start');
-const stopButton = document.querySelector('button#stop');
-const resetButton = document.querySelector('button#reset');
+const input = querySelector<HTMLInputElement>('input.bpm');
+const progress = querySelector<HTMLInputElement>('input.progress');
+const select = querySelector<HTMLSelectElement>('select');
+const startButton = querySelector<HTMLButtonElement>('button#start');
+const stopButton = querySelector<HTMLButtonElement>('button#stop');
+const resetButton = querySelector<HTMLButtonElement>('button#reset');
+
+function querySelector<T extends Element = Element>(selector: string) {
+    const element = document.querySelector<T>(selector);
+
+    if (!element) {
+        throw new Error(`element: "${selector}" is not found`)
+    }
+
+    return element;
+}
 
 const frequencies = {
     C3: 130.81,     C4: 261.63,
@@ -20,24 +30,30 @@ const frequencies = {
     B3: 246.94,     B4: 493.88
 };
 
-function createIterator(array) {
-    let nextIndex = 0;
+function createIterator<T>(array: T[]) {
+    let index = 0;
 
     return {
-        next: () => nextIndex < array.length ? {value: array[nextIndex++], done: false} : {done: true},
-        getIndex: () => nextIndex,
-        setIndex: (index) => nextIndex = index
+        next: () => index < array.length ? {
+            value: array[index++],
+            done: false,
+        } : {
+            value: array[index],
+            done: true,
+        },
+        getIndex: () => index,
+        setIndex: (i: number) => index = i
     };
 }
 
 function AudioPlayer() {
     const audioContext = new AudioContext();
-    let synthesizer = null;
+    let synthesizer: OscillatorNode;
     let paused = true;
     let bpm = 100;
-    let noteList = [];
-    let waveForm = 'square';
-    let customWave = null;
+    let noteList: ReturnType<typeof createIterator<[string, number]>>;
+    let waveForm: OscillatorType = 'square';
+    let customWave: PeriodicWave;
 
     function createOscillator() {
         const oscillator = audioContext.createOscillator();
@@ -45,7 +61,7 @@ function AudioPlayer() {
         if (waveForm == 'custom') {
             oscillator.setPeriodicWave(customWave);
         } else {
-            oscillator.type = waveForm; // 'sine'|'square'|'triangle'|'sawtooth'
+            oscillator.type = waveForm;
         }
 
         oscillator.connect(audioContext.destination);
@@ -53,7 +69,7 @@ function AudioPlayer() {
         return oscillator;
     }
 
-    function playNote(name, lengthValue, delay) {
+    function playNote(name: string, lengthValue: number, delay?: number) {
         if (paused) {
             return;
         }
@@ -62,7 +78,7 @@ function AudioPlayer() {
         const noteLength = 60 / bpm * lengthValue;
         const nextNote = noteList.next();
 
-        progress.value = noteList.getIndex();
+        progress.value = String(noteList.getIndex());
 
         if (name == '-') {
             playNote(...nextNote.value, noteLength);
@@ -83,9 +99,9 @@ function AudioPlayer() {
     }
 
     return {
-        init: (notes) => {
-            progress.value = 0;
-            progress.max = notes.length;
+        init: (notes: [string, number][]) => {
+            progress.value = "0";
+            progress.max = String(notes.length);
 
             noteList = createIterator(notes);
         },
@@ -104,14 +120,14 @@ function AudioPlayer() {
         setIndex: (value) => {
             noteList.setIndex(value);
         },
-        setBpm: (value) => {
+        setBpm: (value: number) => {
             bpm = value;
         },
-        setWaveForm: (value) => {
+        setWaveForm: (value: OscillatorType) => {
             waveForm = value;
 
             if (value == 'custom') {
-                const imag= new Float32Array([0, 0, 1, 0, 1]);   // sine
+                const imag = new Float32Array([0, 0, 1, 0, 1]);   // sine
                 const real = new Float32Array(imag.length);  // cos
                 customWave = audioContext.createPeriodicWave(real, imag);  // cos,sine
             }
@@ -121,7 +137,7 @@ function AudioPlayer() {
 
 const audioPlayer = AudioPlayer();
 
-const song = [
+const song: [string, number][] = [
     ['G3', 1], ['G3', 1], ['G3', 1], ['Eb3', 3/4], ['Bb3', 1/4],
     ['G3', 1], ['Eb3', 3/4], ['Bb3', 1/4], ['G3', 2],
     ['D4', 1], ['D4', 1], ['D4', 1], ['Eb4', 3/4], ['Bb3', 1/4],
@@ -144,16 +160,18 @@ stopButton.addEventListener('click', () => audioPlayer.stop());
 
 resetButton.addEventListener('click', () => audioPlayer.init(song));
 
-input.addEventListener('change', ({currentTarget}) => {
-    if (Number(input.min) <= Number(currentTarget.value) && Number(currentTarget.value) <= Number(input.max)) {
-        audioPlayer.setBpm(currentTarget.value);
+input.addEventListener('change', ({ currentTarget }) => {
+    const value = Number((currentTarget as HTMLInputElement).value);
+
+    if (Number(input.min) <= value && value <= Number(input.max)) {
+        audioPlayer.setBpm(value);
     }
 });
 
-progress.addEventListener('change', ({currentTarget}) => {
-    audioPlayer.setIndex(currentTarget.value);
+progress.addEventListener('change', ({ currentTarget }) => {
+    audioPlayer.setIndex((currentTarget as HTMLInputElement).value);
 });
 
-select.addEventListener('change', ({currentTarget}) => {
-    audioPlayer.setWaveForm(currentTarget.value);
+select.addEventListener('change', ({ currentTarget }) => {
+    audioPlayer.setWaveForm((currentTarget as HTMLInputElement).value as OscillatorType);
 });
