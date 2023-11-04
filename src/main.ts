@@ -5,6 +5,12 @@ const startButton = querySelector<HTMLButtonElement>('button#start');
 const stopButton = querySelector<HTMLButtonElement>('button#stop');
 const resetButton = querySelector<HTMLButtonElement>('button#reset');
 
+const sliderVolume = querySelector<HTMLInputElement>('#slider__volume');
+const sliderAttack = querySelector<HTMLInputElement>('#slider__attack');
+const sliderDecay = querySelector<HTMLInputElement>('#slider__decay');
+const sliderSustain = querySelector<HTMLInputElement>('#slider__sustain');
+const sliderRelease = querySelector<HTMLInputElement>('#slider__release');
+
 function querySelector<T extends Element = Element>(selector: string) {
     const element = document.querySelector<T>(selector);
 
@@ -46,14 +52,26 @@ function createIterator<T>(array: T[]) {
     };
 }
 
+const MAX_TIME = 2;
+
+const envelopeProperties = {
+    attack: Number(sliderAttack.value) || 0.1,
+    decay: Number(sliderDecay.value) || 0,
+    sustain: Number(sliderSustain.value) || 1,
+    release: Number(sliderRelease.value) || 0.2,
+}
+
 function AudioPlayer() {
     const audioContext = new AudioContext();
-    let synthesizer: OscillatorNode;
+    const gainNode = audioContext.createGain();
+    let oscillator: OscillatorNode;
     let paused = true;
     let bpm = 100;
     let noteList: ReturnType<typeof createIterator<[string, number]>>;
     let waveForm: OscillatorType = 'square';
     let customWave: PeriodicWave;
+
+    gainNode.connect(audioContext.destination);
 
     function createOscillator() {
         const oscillator = audioContext.createOscillator();
@@ -64,7 +82,7 @@ function AudioPlayer() {
             oscillator.type = waveForm;
         }
 
-        oscillator.connect(audioContext.destination);
+        oscillator.connect(gainNode);
 
         return oscillator;
     }
@@ -73,7 +91,6 @@ function AudioPlayer() {
         if (paused) {
             return;
         }
-        synthesizer = createOscillator();
         const startTime = delay ? audioContext.currentTime + delay : audioContext.currentTime;
         const noteLength = 60 / bpm * lengthValue;
         const nextNote = noteList.next();
@@ -85,17 +102,33 @@ function AudioPlayer() {
             return;
         }
 
-        synthesizer.frequency.value = frequencies[name];
+        const now = audioContext.currentTime;
+        
+        gainNode.gain.cancelScheduledValues(now);
 
-        synthesizer.start(startTime);
+        const attackDuration = envelopeProperties.attack * MAX_TIME;
+        const attackEndTime = now + attackDuration;
+        const decayDuration = envelopeProperties.decay * MAX_TIME;
+        const releaseTime = startTime + noteLength;
+        const releaseDuration = envelopeProperties.release * MAX_TIME;
+        const releaseEndTime = releaseTime + releaseDuration;
 
-        synthesizer.onended = () => {
+        // attack > decay > sustain > release
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(1, attackEndTime);
+        gainNode.gain.setTargetAtTime(envelopeProperties.sustain, attackEndTime, decayDuration);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, releaseTime);
+        gainNode.gain.linearRampToValueAtTime(0, releaseEndTime);
+
+        oscillator = createOscillator();
+        oscillator.frequency.value = frequencies[name];
+        oscillator.start(startTime);
+        oscillator.onended = () => {
             if (!nextNote.done) {
                 playNote(...nextNote.value);
             }
         };
-
-        synthesizer.stop(startTime + noteLength);
+        oscillator.stop(releaseTime);
     }
 
     return {
@@ -115,7 +148,8 @@ function AudioPlayer() {
         },
         stop: () => {
             paused = true;
-            synthesizer.stop();
+            gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+            oscillator.stop();
         },
         setIndex: (value) => {
             noteList.setIndex(value);
@@ -174,4 +208,24 @@ progress.addEventListener('change', ({ currentTarget }) => {
 
 select.addEventListener('change', ({ currentTarget }) => {
     audioPlayer.setWaveForm((currentTarget as HTMLInputElement).value as OscillatorType);
+});
+
+sliderAttack.addEventListener('change', ({ currentTarget }) => {
+    const value = Number((currentTarget as HTMLInputElement).value);
+    envelopeProperties.attack = value;
+});
+
+sliderDecay.addEventListener('change', ({ currentTarget }) => {
+    const value = Number((currentTarget as HTMLInputElement).value);
+    envelopeProperties.decay = value;
+});
+
+sliderSustain.addEventListener('change', ({ currentTarget }) => {
+    const value = Number((currentTarget as HTMLInputElement).value);
+    envelopeProperties.sustain = value;
+});
+
+sliderRelease.addEventListener('change', ({ currentTarget }) => {
+    const value = Number((currentTarget as HTMLInputElement).value);
+    envelopeProperties.release = value;
 });

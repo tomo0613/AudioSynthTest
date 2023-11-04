@@ -27,6 +27,22 @@
             <input class="progress" type="range"></input>
         </div>
     </section>
+    <fieldset>
+        <legend>Master</legend>
+        <label for="slider__volume">Volume</label>
+        <input id="slider__volume" class="slider" type="range" min="0" max="1" value="1" step="0.01"></input>
+    </fieldset>
+    <fieldset>
+        <legend>Envelope properties</legend>
+        <label for="slider__attack">Attack</label>
+        <input id="slider__attack" class="slider" type="range" min="0" max="1" value="0.1" step="0.01"></input>
+        <label for="slider__decay">Decay</label>
+        <input id="slider__decay" class="slider" type="range" min="0" max="1" value="0" step="0.01"></input>
+        <label for="slider__sustain">Sustain</label>
+        <input id="slider__sustain" class="slider" type="range" min="0" max="1" value="1" step="0.01"></input>
+        <label for="slider__release">Release</label>
+        <input id="slider__release" class="slider" type="range" min="0" max="1" value="0.2" step="0.01"></input>
+    </fieldset>
     <script type="module" src="./src/main.ts"></script>
 </body>
 </html>
